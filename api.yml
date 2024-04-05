@@ -1,0 +1,213 @@
+# This is the OpenAPI specification for your service. It is used to generate the client code.
+# To generate the server code, use the Gradle task `openApiGenerate`. The 
+# generated code will be placed in `build/generate-resources/main`.
+#
+# We will evaluate you based on how well you design your API.
+# 1. How well it follows REST principles.
+# 2. How easy it is to understand and use.
+#
+# References
+# 1. https://swagger.io/specification/
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: User Service
+  license:
+    name: MIT
+servers:
+  - url: http://localhost
+tags:
+  - name: auth
+  - name: profile
+paths:
+  /users/register:
+    post:
+      summary: Register new user
+      operationId: registerUser
+      tags:
+        - auth
+      requestBody:
+        description: registration data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationForm'
+        required: true
+      responses:
+        '200':
+          description: Registration succeed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistrationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FieldError'
+
+  /users/login:
+    post:
+      summary: Login
+      operationId: login
+      tags:
+        - auth
+      requestBody: 
+        description: Authentication credentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCredentials'
+        required: true
+      responses:
+        '200':
+          description: Login succeed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Login fail
+
+  /users/me:
+    get:
+      summary: Get my profile
+      operationId: getMyProfile
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Returned user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '403':
+          description: Forbidden
+    put:
+      summary: Update my profile
+      operationId: updateMyProfile
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileForm'
+        required: true
+      responses:
+        '204':
+          description: Profile updated
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FieldError'
+        '409':
+          description: Conflict
+        '403':
+          description: Forbidden
+      
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserRegistrationForm:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+          description: |
+            Minimum 10 characters and maximum 13 characters.
+            Prefixed with "+62".
+        fullName:
+          type: string
+          description: |
+            Minimum 3 characters and maximum 60 characters.
+        password:
+          type: string
+          description: 
+            Minimum 6 characters and maximum 64 characters.
+            Containing at least 1 capital characters AND 1 number AND 1 special (non
+            alpha-numeric) characters.
+      required:
+        - phoneNumber
+        - fullName
+        - password
+    UserRegistrationResponse:
+      properties:
+        id:
+          description: The id of user
+      required:
+        - id
+    UserProfile:
+      type: object
+      properties:
+        name:
+          type: string
+        phoneNumber:
+          type: string
+      required:
+        - name
+        - phoneNumber
+    UserProfileForm:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        fullName:
+          type: string
+    UserCredentials:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        password:
+          type: string
+      required:
+        - phoneNumber
+        - password
+    LoginResponse: 
+      type: object
+      properties:
+        id:
+          type: string
+        accessToken:
+          type: string
+      required:
+        - id
+        - accessToken
+    FieldError:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The field name
+        codes:
+          type: array
+          items:
+            type: string
+          description: |
+            An array of codes inidcating the validation rules that were not met.
+            Possible values include:
+            - "PHONE_NUMBER_LENGTH": Phone number length should have 10-13 characters.
+            - "PHONE_NUMBER_FORMAT": Phone number should be prefixed with '+62'.
+            - "FULL_NAME_LENGTH": Full name length shoul should have 3-60 characters.
+            - "PASSWORD_STRENGTH": Password length should have 6-64 characters, at least 1 upper case & 1 number & 1 special (alphanum) characters.
+      required:
+        - name
+        - codes
